@@ -11,6 +11,6 @@ namespace BookShoppingCartMvcUi.Models
         [Required]
         [MaxLength(40)]
         public string GenreName { get; set; }
-        public List<Book> BooksByGenre { get; set; }
+        public List<Book> Books { get; set; }
     }
 }
