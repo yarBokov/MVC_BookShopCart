@@ -22,7 +22,7 @@ namespace BookShoppingCartMvcUi.Data
             var userInDb = await userMgr.FindByEmailAsync(admin.Email);
             if (userInDb is null)
             {
-                await userMgr.CreateAsync(admin, "Admin123");
+                await userMgr.CreateAsync(admin, "Admin@123");
                 await userMgr.AddToRoleAsync(admin,Roles.Admin.ToString());
             }
         }
