@@ -10,6 +10,8 @@ namespace BookShoppingCartMvcUi.Models
 
         [Required, MaxLength(40)]
         public string? BookName { get; set; }
+        [Required, MaxLength(60)]
+        public string? AuthorName { get; set; }
         public double Price { get; set; }
         public string? Image { get; set; }
         [Required]
