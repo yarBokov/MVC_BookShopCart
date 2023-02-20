@@ -1,6 +1,49 @@
 ﻿@{
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
+<div class="my-2">
+    <form>
+        <form class="row row-cols-lg-auto g-3 align-items-center">
+
+  <div class="col-12">
+    <label class="visually-hidden" for="inlineFormSelectPref">Жанры</label>
+    <select class="form-select" id="genreId">
+      <option selected>Выбрать...</option>
+      <option value="1">Экшн</option>
+      <option value="2">Ужасы</option>
+      <option value="3">Научная фантастика</option>
+      <option value="4">Фэнтези</option>
+    </select>
+  </div>
+
+    <div class="col-12">
+    <label class="visually-hidden" for="inlineFormInputGroupUsername">Поиск по названию</label>
+    <div class="input-group">
+      <div class="input-group-text"></div>
+      <input type="text" class="form-control" id="" placeholder="Поиск по названию">
+    </div>
+  </div>
+
+  <div class="col-12">
+    <button type="submit" class="btn btn-primary">Поиск</button>
+  </div>
+</form>
+    </form>
+</div>
+
+<div class="w-100 mt-4 d-flex flex-wrap">
+    @for(int i=1;i<8;i++)
+    {
+        <div class="card mx-2 mb-4" style="width: 16rem;">
+        <img src="" class="card-img-top" alt="...">
+        <div class="card-body">
+        <h5 class="card-title">Книга</h5>
+        <p class="card-text">
+            Автор:
+            Цена:
+        </p>
+        <a href="#" class="btn btn-primary">Добавить в корзину</a>
+        </div>
+        </div>
+    }
 </div>
