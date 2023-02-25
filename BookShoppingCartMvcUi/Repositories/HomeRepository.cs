@@ -10,6 +10,12 @@ namespace BookShoppingCartMvcUi.Repositories
         {
             this.dbContext = dbContext;
         }
+
+        public async Task<IEnumerable<Genre>> LoadGenres()
+        {
+            return await dbContext.Genres.ToListAsync();
+        }
+
         public async Task<IEnumerable<Book>> DisplayBooks(string sTerm = "", int genreId = 0)
         {
             sTerm = sTerm.ToLower();
