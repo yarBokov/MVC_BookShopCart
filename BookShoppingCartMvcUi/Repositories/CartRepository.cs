@@ -3,19 +3,51 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BookShoppingCartMvcUi.Repositories
 {
-    public class CartRepository
+    public class CartRepository : ICartRepository
     {
         private readonly ApplicationDbContext dbContext;
         private readonly UserManager<IdentityUser> userManager;
         private readonly IHttpContextAccessor contextAccessor;
 
-        public CartRepository(ApplicationDbContext dbContext, 
+        public CartRepository(ApplicationDbContext dbContext,
             UserManager<IdentityUser> userManager,
             IHttpContextAccessor contextAccessor)
         {
             this.dbContext = dbContext;
             this.userManager = userManager;
             this.contextAccessor = contextAccessor;
+        }
+        public async Task<bool> RemoveItem(int bookId, int qty)
+        {
+            try
+            {
+                string userId = GetUserID();
+                if (string.IsNullOrEmpty(userId))
+                    return false;
+                var cart = await GetCart(userId);
+                if (cart is null)
+                {
+                    return false;
+                }
+                var cartItem = dbContext.CartDetails.FirstOrDefault(
+                    x => x.ShoppingCartId == cart.Id && x.BookId == bookId);
+                if (cartItem is null)
+                    return false;
+                else if (cartItem.Quantity == 1)
+                {
+                    dbContext.CartDetails.Remove(cartItem);
+                }
+                else
+                {
+                    cartItem.Quantity -= 1;
+                }
+                dbContext.SaveChanges();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
         }
         public async Task<bool> AddItem(int bookId, int qty)
         {
@@ -37,8 +69,8 @@ namespace BookShoppingCartMvcUi.Repositories
                 }
                 dbContext.SaveChanges();
                 var cartItem = dbContext.CartDetails.FirstOrDefault(
-                    x => x.ShoppingCartId== cart.Id && x.BookId == bookId );
-                if (cartItem is not null) 
+                    x => x.ShoppingCartId == cart.Id && x.BookId == bookId);
+                if (cartItem is not null)
                 {
                     cartItem.Quantity += qty;
                 }
@@ -47,8 +79,8 @@ namespace BookShoppingCartMvcUi.Repositories
                     cartItem = new CartDetail
                     {
                         BookId = bookId,
-                        ShoppingCartId= cart.Id,
-                        Quantity= qty
+                        ShoppingCartId = cart.Id,
+                        Quantity = qty
                     };
                     dbContext.CartDetails.Add(cartItem);
                 }
@@ -56,12 +88,23 @@ namespace BookShoppingCartMvcUi.Repositories
                 transaction.Commit();
                 return true;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return false;
             }
         }
-
+        public async Task<IEnumerable<ShoppingCart>> GetUserCart()
+        {
+            var usedId = GetUserID();
+            if (usedId == null)
+                throw new Exception("Invalid userId");
+            var shoppingCart = await dbContext.ShoppingCarts
+                                        .Include(x => x.CartDetails)
+                                        .ThenInclude(x => x.Book)
+                                        .ThenInclude(x => x.Genre)
+                                        .Where(x => x.UsedId == usedId).ToListAsync();
+            return shoppingCart;
+        }
         private async Task<ShoppingCart> GetCart(string userId)
         {
             var cart = await dbContext.ShoppingCarts.FirstOrDefaultAsync(x => x.UsedId == userId);
