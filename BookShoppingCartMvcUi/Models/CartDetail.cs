@@ -12,7 +12,7 @@ namespace BookShoppingCartMvcUi.Models
         [Required]
         public int BookId { get; set; }
         [Required]
-        public int Quantity { get; set; }
+        public int Quantity { get; set; } = 0;
         public Book Book { get; set; }
         public ShoppingCart ShoppingCart { get; set; }
     }
