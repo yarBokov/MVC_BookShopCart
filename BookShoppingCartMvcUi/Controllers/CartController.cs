@@ -12,24 +12,30 @@ namespace BookShoppingCartMvcUi.Controllers
         {
             this.cartRepository = cartRepository;
         }
-        public IActionResult AddItem(int bookId, int qty=1)
+        public async Task<IActionResult> AddItem(int bookId, int qty = 1, int redirect = 0)
         {
-            return View();
+            var cartCount = await cartRepository.AddItem(bookId, qty);
+            if (redirect == 0)
+                return Ok(cartCount);
+            return RedirectToAction("GetUserCart");
         }
 
-        public IActionResult RemoveItem(int bookId)
+        public async Task<IActionResult> RemoveItem(int bookId)
         {
-            return View();
+            var cartCount = await cartRepository.RemoveItem(bookId);
+            return RedirectToAction("GetUserCart");
         }
 
-        public IActionResult GetUserCart()
+        public async Task<IActionResult> GetUserCart()
         {
-            return View();
+            var cart = await cartRepository.GetUserCart();
+            return View(cart);
         }
 
-        public IActionResult GetTotalItemInCart()
+        public async Task<IActionResult> GetTotalItemInCart()
         {
-            return View();
+            int cartItem = await cartRepository.GetItemsCount();
+            return Ok(cartItem);
         }
     }
 }

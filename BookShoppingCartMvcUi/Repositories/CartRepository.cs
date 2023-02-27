@@ -17,7 +17,7 @@ namespace BookShoppingCartMvcUi.Repositories
             this.userManager = userManager;
             this.contextAccessor = contextAccessor;
         }
-        public async Task<int> RemoveItem(int bookId, int qty)
+        public async Task<int> RemoveItem(int bookId)
         {
             string userId = GetUserID();
             try
