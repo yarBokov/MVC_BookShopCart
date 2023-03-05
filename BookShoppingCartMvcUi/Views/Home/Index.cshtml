@@ -2,56 +2,84 @@
 @{
 
 }
-
 <div class="my-2">
-   <form asp-action="Index" class="row row-cols-lg-auto g-3 align-items-center">
-  <div class="col-12">
-    <label class="visually-hidden" for="genreId">Жанры</label>
-    <select class="form-select" id="genreId" name="genreId">
-      <option selected>По жанрам</option>
-      @foreach(var genre in Model.Genres)
-        {
-            <option selected="@(genre.Id == Model.GenreID)" value="@genre.Id">@genre.GenreName</option>    
-        }
-    </select>
-  </div>
+    <form asp-action="Index" class="row row-cols-lg-auto g-3 align-items-center">
+        <div class="col-12">
+            <label class="visually-hidden" for="genreId">Genres</label>
+            <select class="form-select" id="genreId" name="genreId">
+                <option selected>Genre</option>
+                @foreach (var genre in Model.Genres)
+                {
+                        <option selected="@(genre.Id == Model.GenreID)" value="@genre.Id">@genre.GenreName</option>
+                }
+            </select>
+        </div>
 
-    <div class="col-12">
-    <label class="visually-hidden" for="sTerm">Поиск по названию</label>
-    <div class="input-group">
-      <div class="input-group-text"></div>
-      <input type="text" class="form-control" value="@Model.STerm" id="sTerm" name="sTerm" placeholder="Поиск по названию">
-    </div>
-  </div>
+        <div class="col-12">
+            <label class="visually-hidden" for="sterm">Search by title</label>
+            <div class="input-group">
+                <div class="input-group-text"></div>
+                <input type="text" class="form-control" value="@Model.STerm" id="sterm" name="sterm" placeholder="Поиск по названию">
+            </div>
+        </div>
 
-  <div class="col-12">
-    <button type="submit" class="btn btn-primary">Поиск</button>
-    <a href="/Home/Index" class="btn btn-dark">Сброс</a>
-  </div>
-  </form>
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary">Поиск</button>
+            <a href="/Home/Index" class="btn btn-dark">Сбросить</a>
+        </div>
+    </form>
 </div>
 
-<div class="w-100 mt-4 d-flex flex-wrap">
+<div class="w-100 mt-4 d-flex flex-wrap ">
     @foreach (var book in Model.Books)
     {
-        <div class="card mx-3 mb-4" style="width: 16rem;">
-            @if(string.IsNullOrEmpty(book.Image))
+            <div class="card mx-3 mb-4" style="width: 14rem;">
+            @if (string.IsNullOrEmpty(book.Image))
             {
-                <img style="width:100%;height:300px" src="/images/No-Image.png" class="card-img-top" alt="...">
+                        <img style="width:100%;height:250px" src="/images/NoImage.png" class="card-img-top" alt="...">
+
             }
             else
             {
-                <img style="width:100%;height:300px" src="/images/@book.Image" class="card-img-top" alt="...">
+                        <img style="width:100%;height:250px" src="/images/@book.Image" class="card-img-top" alt="...">
             }
-            <div class="card-body">
-                <h5 class="card-title">@book.BookName</h5>
-                <p class="card-text">
-                <b>Жанр: </b>@book.GenreName
-                </p>
-                <p><b>Автор: </b> @book.AuthorName</p>
-                <p><b>Цена: </b>@book.Price руб</p>
-            <a href="#" class="btn btn-primary">Добавить в корзину</a>
+                <div class="card-body">
+                    <h5 class="card-title">@book.BookName</h5>
+                    <p class="card-text">
+                        <b>Жанр: </b>@book.GenreName <br />
+                        <b>Aвтор: </b>@book.AuthorName <br />
+                        <b>Цена: </b>@book.Price
+                    </p>
+                    <button type="button" onclick="add(@book.Id)" class="btn btn-primary">Добавить в корзину</button>
+                </div>
             </div>
-        </div>
     }
 </div>
+
+@section Scripts{
+        <script>
+            async function add(bookId) {
+                 var usernameEl = document.getElementById("username");
+            if(usernameEl==null){
+                window.location.href = "/Identity/Account/Login";
+              //var username=usernameEl.innerText;
+              //  if(username.length<1){
+              //      window.location.href="/Identity/Account/Login";
+              //  }
+            }
+                try {
+                    var response = await fetch(`/Cart/AddItem?bookId=${bookId}`);
+                    if (response.status == 200) {
+                        var result = await response.json();
+                        var cartCountEl = document.getElementById("cartCount");
+                        cartCountEl.innerHTML = result;
+                        window.location.href = "#cartCount";
+                    }
+                }
+                catch (err) {
+                    console.log(err);
+                }
+            }
+        </script>
+}
+
