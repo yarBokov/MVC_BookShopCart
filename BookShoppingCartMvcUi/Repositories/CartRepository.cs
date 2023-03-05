@@ -67,11 +67,13 @@ namespace BookShoppingCartMvcUi.Repositories
                     cartItem.Quantity += qty;
                 else
                 {
+                    var book = dbContext.Books.Find(bookId);
                     cartItem = new CartDetail
                     {
                         BookId = bookId,
                         ShoppingCartId = cart.Id,
-                        Quantity = qty
+                        Quantity = qty,
+                        UnitPrice = book.Price
                     };
                     dbContext.CartDetails.Add(cartItem);
                 }
@@ -113,6 +115,52 @@ namespace BookShoppingCartMvcUi.Repositories
                               select new { cartDetail.Id }
                               ).ToListAsync();
             return data.Count;
+        }
+
+        public async Task<bool> DoCheckout()
+        {
+            using var transaction = dbContext.Database.BeginTransaction();
+            try
+            {
+                var userId = GetUserID();
+                if (string.IsNullOrEmpty(userId))
+                    throw new Exception("User is not logged-in");
+                var cart = await GetCart(userId);
+                if (cart is null)
+                    throw new Exception("Invalid cart");
+                var cartDetail = dbContext.CartDetails
+                                    .Where(a => a.ShoppingCartId == cart.Id).ToList();
+                if (cartDetail.Count == 0)
+                    throw new Exception("Cart is empty");
+                var order = new Order
+                {
+                    UserId = userId,
+                    DateCreated = DateTime.UtcNow,
+                    OrderStatusId = 1 //pending
+                };
+                dbContext.Orders.Add(order);
+                dbContext.SaveChanges();
+                foreach (var item in cartDetail)
+                {
+                    var orderDetail = new OrderDetail
+                    {
+                        BookId = item.BookId,
+                        OrderId = order.Id,
+                        Quantity = item.Quantity,
+                        UnitPrice = item.UnitPrice
+                    };
+                    dbContext.OrderDetails.Add(orderDetail);
+                }
+                dbContext.SaveChanges();
+                dbContext.CartDetails.RemoveRange(cartDetail);
+                dbContext.SaveChanges();
+                transaction.Commit();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
         }
 
         private string GetUserID()
