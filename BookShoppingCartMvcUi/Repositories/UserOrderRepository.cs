@@ -23,8 +23,8 @@ namespace BookShoppingCartMvcUi.Repositories
             if (string.IsNullOrEmpty(userId))
                 throw new Exception("user is not logged-in");
             var orders = await applicationDbContext.Orders
-                                             .Include(x => x.OrderDetailList)
                                              .Include(x => x.OrderStatus)
+                                             .Include(x => x.OrderDetailList)
                                              .ThenInclude(x => x.Book)
                                              .ThenInclude(x => x.Genre)
                                              .Where(a => a.UserId == userId)
