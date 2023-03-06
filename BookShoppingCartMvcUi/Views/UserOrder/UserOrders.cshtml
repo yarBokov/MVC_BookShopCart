@@ -1,0 +1,33 @@
+﻿@model IEnumerable<Order>
+@{
+    ViewData["Title"] = "GetUserCart";
+}
+
+<div style="width:90%;margin:auto class="mt-2"">
+    <h4>Мои заказы</h4>
+    @if (Model != null && Model.Count() > 0)
+    {
+        <table class="table table-striped">
+            <tr>
+                <th>Дата заказа</th>
+                <th>Статус заказа</th>
+            </tr>
+            @foreach(var order in Model)
+            {
+                <tr>
+                    <td>@order.DateCreated.ToString("dd-MM-yyyy")</td>
+                    <td>@order.OrderStatus.StatusName</td>
+                    @if (order.OrderDetailList != null && order.OrderDetailList.Count() > 0)
+                    {
+                        <span>Детали заказа</span>
+                    }
+                </tr>
+            }
+        </table>
+    }
+    else
+    {
+            <h5>Заказов нет</h5>
+    }
+</div>
+
