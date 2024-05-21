@@ -17,7 +17,7 @@
                     <td>@order.DateCreated.ToString("dd-MM-yyyy")</td>
                     <td>@order.OrderStatus.StatusName</td>
                 </tr>
-                @if (order.OrderDetailList != null && order.OrderDetailList.Count > 0)
+                @if (order.OrderDetail != null && order.OrderDetail.Count > 0)
                 {
                     <tr>
                         <td>
@@ -27,7 +27,7 @@
                                         Итого:
                                     </td>
                                     <td>
-                                        @(order.OrderDetailList.Select(item => item.Book.Price * item.Quantity).Sum())
+                                        @(order.OrderDetail.Select(item => item.Book.Price * item.Quantity).Sum())
                                     </td>
                                 </tr>
                                 <tr>
@@ -37,7 +37,7 @@
                                     <th>Цена(руб)</th>
                                     <th>Итоговая цена</th>
                                 </tr>
-                                @foreach (var item in order.OrderDetailList)
+                                @foreach (var item in order.OrderDetail)
                                 {
                                     <tr>
                                         <td>@item.Book.BookName</td>
