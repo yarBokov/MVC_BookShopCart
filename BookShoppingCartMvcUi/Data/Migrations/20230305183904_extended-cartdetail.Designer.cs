@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace BookShoppingCartMvcUi.Data.Migrations
 {
-    [DbContext(typeof(ApplicationDbContext))]
+    [_db(typeof(ApplicationDbContext))]
     [Migration("20230305183904_extended-cartdetail")]
     partial class extendedcartdetail
     {

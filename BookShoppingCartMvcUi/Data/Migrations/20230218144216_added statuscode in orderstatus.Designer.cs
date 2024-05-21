@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace BookShoppingCartMvcUi.Data.Migrations
 {
-    [DbContext(typeof(ApplicationDbContext))]
+    [_db(typeof(ApplicationDbContext))]
     [Migration("20230218144216_added statuscode in orderstatus")]
     partial class addedstatuscodeinorderstatus
     {

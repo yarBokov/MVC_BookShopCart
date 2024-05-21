@@ -20,7 +20,12 @@ namespace BookShoppingCartMvcUi.Models
         public List<OrderDetail> OrderDetailList { get; set; }
         public List<CartDetail> CartDetailList { get; set; }
 
+        public Stock Stock { get; set; }
+
         [NotMapped]
         public string GenreName { get; set; }
+
+        [NotMapped]
+        public int Quantity { get; set; }
     }
 }

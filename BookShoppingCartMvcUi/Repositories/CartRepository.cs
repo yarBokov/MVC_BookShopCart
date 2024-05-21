@@ -1,19 +1,20 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using BookShoppingCartMvcUi.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookShoppingCartMvcUi.Repositories
 {
     public class CartRepository : ICartRepository
     {
-        private readonly ApplicationDbContext dbContext;
+        private readonly ApplicationDbContext _db;
         private readonly UserManager<IdentityUser> userManager;
         private readonly IHttpContextAccessor contextAccessor;
 
-        public CartRepository(ApplicationDbContext dbContext,
+        public CartRepository(ApplicationDbContext _db,
             UserManager<IdentityUser> userManager,
             IHttpContextAccessor contextAccessor)
         {
-            this.dbContext = dbContext;
+            this._db = _db;
             this.userManager = userManager;
             this.contextAccessor = contextAccessor;
         }
@@ -23,19 +24,22 @@ namespace BookShoppingCartMvcUi.Repositories
             try
             {
                 if (string.IsNullOrEmpty(userId))
-                    throw new Exception("user is not logged-in");
+                    throw new UnauthorizedAccessException("user is not logged-in");
+
                 var cart = await GetCart(userId);
                 if (cart is null)
-                    throw new Exception("Invalid cart");
-                var cartItem = dbContext.CartDetails.FirstOrDefault(
+                    throw new InvalidOperationException("Invalid cart");
+
+                var cartItem = _db.CartDetails.FirstOrDefault(
                     x => x.ShoppingCartId == cart.Id && x.BookId == bookId);
+
                 if (cartItem is null)
-                    throw new Exception("Not items in cart");
+                    throw new InvalidOperationException("Not items in cart");
                 else if (cartItem.Quantity == 1)
-                    dbContext.CartDetails.Remove(cartItem);
+                    _db.CartDetails.Remove(cartItem);
                 else
                     cartItem.Quantity -= 1;
-                dbContext.SaveChanges();
+                _db.SaveChanges();
             }
             catch (Exception ex)
             {
@@ -45,29 +49,29 @@ namespace BookShoppingCartMvcUi.Repositories
         }
         public async Task<int> AddItem(int bookId, int qty)
         {
-            using var transaction = dbContext.Database.BeginTransaction();
+            using var transaction = _db.Database.BeginTransaction();
             string userId = GetUserID();
             try
             {
                 if (string.IsNullOrEmpty(userId))
-                    throw new Exception("user is not logged-in");
+                    throw new UnauthorizedAccessException("user is not logged-in");
                 var cart = await GetCart(userId);
                 if (cart is null)
                 {
                     cart = new ShoppingCart
                     {
-                        UsedId = userId
+                        UserId = userId
                     };
-                    dbContext.ShoppingCarts.Add(cart);
+                    _db.ShoppingCarts.Add(cart);
                 }
-                dbContext.SaveChanges();
-                var cartItem = dbContext.CartDetails.FirstOrDefault(
+                _db.SaveChanges();
+                var cartItem = _db.CartDetails.FirstOrDefault(
                     x => x.ShoppingCartId == cart.Id && x.BookId == bookId);
                 if (cartItem is not null)
                     cartItem.Quantity += qty;
                 else
                 {
-                    var book = dbContext.Books.Find(bookId);
+                    var book = _db.Books.Find(bookId);
                     cartItem = new CartDetail
                     {
                         BookId = bookId,
@@ -75,9 +79,9 @@ namespace BookShoppingCartMvcUi.Repositories
                         Quantity = qty,
                         UnitPrice = book.Price
                     };
-                    dbContext.CartDetails.Add(cartItem);
+                    _db.CartDetails.Add(cartItem);
                 }
-                dbContext.SaveChanges();
+                _db.SaveChanges();
                 transaction.Commit();
             }
             catch (Exception ex)
@@ -90,18 +94,21 @@ namespace BookShoppingCartMvcUi.Repositories
         {
             var usedId = GetUserID();
             if (usedId == null)
-                throw new Exception("Invalid userId");
-            var shoppingCart = await dbContext.ShoppingCarts
-                                        .Include(x => x.CartDetails)
-                                        .ThenInclude(x => x.Book)
-                                        .ThenInclude(x => x.Genre)
-                                        .Where(x => x.UsedId == usedId).FirstOrDefaultAsync();
+                throw new InvalidOperationException("Invalid userId");
+            var shoppingCart = await _db.ShoppingCarts
+                                  .Include(a => a.CartDetails)
+                                  .ThenInclude(a => a.Book)
+                                  .ThenInclude(a => a.Stock)
+                                  .Include(a => a.CartDetails)
+                                  .ThenInclude(a => a.Book)
+                                  .ThenInclude(a => a.Genre)
+                                  .Where(x => x.UserId == usedId).FirstOrDefaultAsync();
             return shoppingCart;
         }
 
         public async Task<ShoppingCart> GetCart(string userId)
         {
-            var cart = await dbContext.ShoppingCarts.FirstOrDefaultAsync(x => x.UsedId == userId);
+            var cart = await _db.ShoppingCarts.FirstOrDefaultAsync(x => x.UserId == userId);
             return cart;
         }
 
@@ -109,37 +116,49 @@ namespace BookShoppingCartMvcUi.Repositories
         {
             if (!string.IsNullOrEmpty(userId))
                 userId = GetUserID();
-            var data = await (from cart in dbContext.ShoppingCarts
-                              join cartDetail in dbContext.CartDetails
+            var data = await (from cart in _db.ShoppingCarts
+                              join cartDetail in _db.CartDetails
                               on cart.Id equals cartDetail.ShoppingCartId
+                              where cart.UserId == userId
                               select new { cartDetail.Id }
                               ).ToListAsync();
             return data.Count;
         }
 
-        public async Task<bool> DoCheckout()
+        public async Task<bool> DoCheckout(CheckoutModel model)
         {
-            using var transaction = dbContext.Database.BeginTransaction();
+            using var transaction = _db.Database.BeginTransaction();
             try
             {
                 var userId = GetUserID();
                 if (string.IsNullOrEmpty(userId))
-                    throw new Exception("User is not logged-in");
+                    throw new UnauthorizedAccessException("User is not logged-in");
                 var cart = await GetCart(userId);
                 if (cart is null)
-                    throw new Exception("Invalid cart");
-                var cartDetail = dbContext.CartDetails
+                    throw new InvalidOperationException("Invalid cart");
+                var cartDetail = _db.CartDetails
                                     .Where(a => a.ShoppingCartId == cart.Id).ToList();
                 if (cartDetail.Count == 0)
-                    throw new Exception("Cart is empty");
+                    throw new InvalidOperationException("Cart is empty");
+                var pendingRecord = _db.OrderStatuses.FirstOrDefault(s => s.StatusName == "Pending");
+                if (pendingRecord is null)
+                    throw new InvalidOperationException("Order status does not have Pending status");
+
                 var order = new Order
                 {
                     UserId = userId,
                     DateCreated = DateTime.UtcNow,
-                    OrderStatusId = 1 //pending
+                    Name = model.Name,
+                    Email = model.Email,
+                    MobileNumber = model.MobileNumber,
+                    PaymentMethod = model.PaymentMethod,
+                    Address = model.Address,
+                    IsPaid = false,
+                    OrderStatusId = pendingRecord.Id
                 };
-                dbContext.Orders.Add(order);
-                dbContext.SaveChanges();
+                _db.Orders.Add(order);
+                _db.SaveChanges();
+
                 foreach (var item in cartDetail)
                 {
                     var orderDetail = new OrderDetail
@@ -149,11 +168,24 @@ namespace BookShoppingCartMvcUi.Repositories
                         Quantity = item.Quantity,
                         UnitPrice = item.UnitPrice
                     };
-                    dbContext.OrderDetails.Add(orderDetail);
+                    _db.OrderDetails.Add(orderDetail);
+
+
+                    var stock = await _db.Stocks.FirstOrDefaultAsync(a => a.BookId == item.BookId);
+                    if (stock == null)
+                    {
+                        throw new InvalidOperationException("Stock is null");
+                    }
+
+                    if (item.Quantity > stock.Quantity)
+                    {
+                        throw new InvalidOperationException($"Only {stock.Quantity} items(s) are available in the stock");
+                    }
+                    stock.Quantity -= item.Quantity;
                 }
-                dbContext.SaveChanges();
-                dbContext.CartDetails.RemoveRange(cartDetail);
-                dbContext.SaveChanges();
+
+                _db.CartDetails.RemoveRange(cartDetail);
+                _db.SaveChanges();
                 transaction.Commit();
                 return true;
             }
@@ -165,8 +197,8 @@ namespace BookShoppingCartMvcUi.Repositories
 
         private string GetUserID()
         {
-            var user = contextAccessor.HttpContext.User;
-            string userId = userManager.GetUserId(user);
+            var principal = contextAccessor.HttpContext.User;
+            string userId = userManager.GetUserId(principal);
             return userId;
         }
     }

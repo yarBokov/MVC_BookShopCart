@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace BookShoppingCartMvcUi.Data.Migrations
 {
-    [DbContext(typeof(ApplicationDbContext))]
+    [_db(typeof(ApplicationDbContext))]
     [Migration("20230220101006_added-authorname-to-book")]
     partial class addedauthornametobook
     {
