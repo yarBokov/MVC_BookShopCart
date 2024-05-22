@@ -9,7 +9,7 @@ using System;
 
 namespace BookShoppingCartMvcUi.Data.Migrations
 {
-    [_db(typeof(ApplicationDbContext))]
+    [DbContext(typeof(ApplicationDbContext))]
     [Migration("00000000000000_CreateIdentitySchema")]
     partial class CreateIdentitySchema
     {
